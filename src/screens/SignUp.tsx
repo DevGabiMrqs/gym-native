@@ -5,6 +5,8 @@ import { useForm, Controller } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
 
+import { api } from '@services/api'
+
 import LogoSvg from '@assets/logo.svg'
 import BackgroundImg from '@assets/background.png'
 
@@ -16,7 +18,7 @@ type FormDataProps = {
   email: string;
   password: string;
   password_confirm: string;
-}//passei a tipagem dos dados que estou enviando do formulário.
+}
 
 const signUpSchema = yup.object({
   name: yup.string().required('Informe o nome.'),
@@ -40,10 +42,19 @@ export function SignUp() {
     navigation.goBack()
   }
 
-  function handleSignUp({ name, email, password, password_confirm }: FormDataProps) {
-    console.log({ name, email, password, password_confirm });
+
+  async function handleSignUp({ name, email, password }: FormDataProps) {
+
+    try {
+      const response = await api.post("/users", { name, email, password }); //1º parâmetro(endpoint) 2º parâmetro(os dados que quero passar pro back-end).
+      console.log(response.data);
+    }
+    catch(error) {
+      console.log(error)
+    }
 
   }
+
 
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
@@ -71,7 +82,7 @@ export function SignUp() {
 
           <Controller //controla o input
             control={control} //controla o valor de cada input
-            name="name" // nome do input
+            name="name" 
             render={({ field: { onChange, value } }) => (
               <Input
                 placeholder="Nome"
