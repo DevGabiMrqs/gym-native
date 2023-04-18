@@ -1,10 +1,11 @@
 import React from 'react'
 import { useNavigation } from '@react-navigation/native'
-import { VStack, Image, Text, Center, Heading, ScrollView } from 'native-base'
+import { VStack, Image, Text, Center, Heading, ScrollView, Alert } from 'native-base'
 import { useForm, Controller } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
 
+import axios from 'axios'
 import { api } from '@services/api'
 
 import LogoSvg from '@assets/logo.svg'
@@ -12,6 +13,7 @@ import BackgroundImg from '@assets/background.png'
 
 import { Input } from '@components/Input'
 import { Button } from '@components/Button'
+
 
 type FormDataProps = {
   name: string;
@@ -46,15 +48,15 @@ export function SignUp() {
   async function handleSignUp({ name, email, password }: FormDataProps) {
 
     try {
-      const response = await api.post("/users", { name, email, password }); //1º parâmetro(endpoint) 2º parâmetro(os dados que quero passar pro back-end).
+      const response = await api.post('/users', { name, email, password }); //1º parâmetro(endpoint) 2º parâmetro(os dados que quero passar pro back-end).
       console.log(response.data);
+      
+    } catch(error) {
+      if(axios.isAxiosError(error)) {
+      Alert(error.response?.data);//se não existir response não exibe o data
     }
-    catch(error) {
-      console.log(error)
-    }
-
   }
-
+}
 
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
