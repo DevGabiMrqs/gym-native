@@ -5,6 +5,7 @@ import { AuthNavigatorRoutesProps } from '@routes/auth.routes'
 import { useForm, Controller } from "react-hook-form"
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
+import { useAuth } from "@hooks/useAuth";
 
 import LogoSvg from '@assets/logo.svg'
 import BackgroundImg from '@assets/background.png'
@@ -23,6 +24,9 @@ const signInSchema = yup.object({
 })
 
 export function SignIn() {
+
+  const { signIn } = useAuth();
+
   const { control, handleSubmit, formState: { errors } } = useForm<FormDataProps>({
     resolver: yupResolver(signInSchema)
   })
@@ -34,8 +38,7 @@ export function SignIn() {
   }
 
   function handleSignIn({ email, password }: FormDataProps) {
-    console.log({ email, password });
-
+    signIn(email, password);
   }
 
   return (
