@@ -6,7 +6,7 @@ import axios from "axios";
 
 export type AuthContextDataProps = {
     user: UserDTO;
-    signIn: (email: string, password: string) => void;
+    signIn: (email: string, password: string) => Promise<void>;
 }
 
 type AuthContextProviderProps = {
@@ -22,18 +22,20 @@ export const AuthContext = createContext<AuthContextDataProps>({} as AuthContext
 export function AuthContextProvider({ children } : AuthContextProviderProps) {
     const[user, setUser] = useState<UserDTO>({} as UserDTO);
 
-
+    //signIn é async, no retorno tem que ser uma promise.
     async function signIn(email:string, password:string){
 
         try {
 
-           const response = await api.post('./sessions', {email, password}); //quero passar pro Back email e senha.
+           const { data } = await api.post('./sessions', {email, password}); //quero passar pro Back email e senha, e recuperar a response da back end, posso desetruturar os dados que o back vai retornar.
 
+           if(data.user){
+            setUser(data.user)
+           }
 
-       }catch(error){
+       } catch(error) {
 
-        if(axios.isAxiosError(error))
-        console.log(error)
+       throw error;
     }
     }
     //podemos deixar a logica que vai atualizar(useState) nosso contexto aqui no AuthContext
