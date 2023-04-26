@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React from "react";
+import { useState } from "react";
 import { ReactNode, createContext } from "react";
 import { UserDTO } from "@dtos/UserDTO";
 import { api } from "@services/api";
+import { storageUserSave, storageUserGet } from "@storage/storageUser";
 import axios from "axios";
 
 export type AuthContextDataProps = {
@@ -30,7 +32,9 @@ export function AuthContextProvider({ children } : AuthContextProviderProps) {
            const { data } = await api.post('./sessions', {email, password}); //quero passar pro Back email e senha, e recuperar a response da back end, posso desetruturar os dados que o back vai retornar.
 
            if(data.user){
-            setUser(data.user)
+            setUser(data.user);
+            storageUserSave(data.user);
+            storageUserGet();
            }
 
        } catch(error) {
