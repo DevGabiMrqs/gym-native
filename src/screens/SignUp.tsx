@@ -1,6 +1,6 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useNavigation } from '@react-navigation/native'
-import { VStack, Image, Text, Center, Heading, ScrollView, Alert } from 'native-base'
+import { VStack, Image, Text, Center, Heading, ScrollView, Alert, useToast } from 'native-base'
 import { useForm, Controller } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
@@ -13,6 +13,7 @@ import BackgroundImg from '@assets/background.png'
 
 import { Input } from '@components/Input'
 import { Button } from '@components/Button'
+import { useAuth } from '@hooks/useAuth'
 
 
 type FormDataProps = {
@@ -29,14 +30,20 @@ const signUpSchema = yup.object({
   password_confirm: yup.string().required('Confirme a senha.').oneOf([yup.ref('password')], 'A confirmação da senha não confere.')
 })
 
+//passamos a props dos dados, aqui onde são enviados pro form.
+//vamos usar o useForm para acessar o control, passamos o mesmo control para 
+//todos inputs pois vão ser controlados pelo mesmo formulário.
+//vamos usar o handleSubmit para ele enviar os datas da nossa aplicação. 
 export function SignUp() {
+
+  const[isLoading, setIsLoading] = useState(false);
+
+  const { signIn } = useAuth();
+
   const { control, handleSubmit, formState: { errors } } = useForm<FormDataProps>({
     resolver: yupResolver(signUpSchema)
   })
-  //passamos a props dos dados, aqui onde são enviados pro form.
-  //vamos usar o useForm para acessar o control, passamos o mesmo control para 
-  //todos inputs pois vão ser controlados pelo mesmo formulário.
-  //vamos usar o handleSubmit para ele enviar os datas da nossa aplicação. 
+ 
 
   const navigation = useNavigation()
 
@@ -48,10 +55,15 @@ export function SignUp() {
   async function handleSignUp({ name, email, password }: FormDataProps) {
 
     try {
-      const response = await api.post('/users', { name, email, password }); //1º parâmetro(endpoint) 2º parâmetro(os dados que quero passar pro back-end).
-      console.log(response.data);
-      
+      setIsLoading(true);
+
+      await api.post('/users', { name, email, password }); //1º parâmetro(endpoint) 2º parâmetro(os dados que quero passar pro back-end).
+      await signIn(email, password);
+
+
     } catch(error) {
+
+      setIsLoading(false);
       if(axios.isAxiosError(error)) {
       Alert(error.response?.data);//se não existir response não exibe o data
     }
@@ -143,6 +155,7 @@ export function SignUp() {
           <Button
             title="Criar e Acessar"
             onPress={handleSubmit(handleSignUp)} //o handle submit vai passar pro handleSignUp todo conteudo do formulário e tbm para que passe os valores do formulário p/ o handlesignup.
+            isLoading={isLoading}
           />
 
           <Button

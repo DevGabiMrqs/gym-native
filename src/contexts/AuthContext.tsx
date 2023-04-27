@@ -1,14 +1,16 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useState } from "react";
 import { ReactNode, createContext } from "react";
 import { UserDTO } from "@dtos/UserDTO";
 import { api } from "@services/api";
-import { storageUserSave, storageUserGet } from "@storage/storageUser";
+import { storageUserSave, storageUserGet, storageUserRemove } from "@storage/storageUser";
 import axios from "axios";
 
 export type AuthContextDataProps = {
     user: UserDTO;
     signIn: (email: string, password: string) => Promise<void>;
+    isLoadingUserStorageData: boolean;
+    signOut: () => Promise<void>;
 }
 
 type AuthContextProviderProps = {
@@ -17,14 +19,14 @@ type AuthContextProviderProps = {
 
 export const AuthContext = createContext<AuthContextDataProps>({} as AuthContextDataProps);
 
-//vamos criar uma estado para guardar as informações do usuário, o estado muda todos os lugares que estiverem usando ele.
+//vamos criar um estado para guardar as informações do usuário, o estado muda todos os lugares que estiverem usando ele,
 //mesmo quando for um objeto vazio, ainda assim existe um padrão. Então devemos tipar, aqui foi passado o DTO.
 
 
 export function AuthContextProvider({ children } : AuthContextProviderProps) {
     const[user, setUser] = useState<UserDTO>({} as UserDTO);
-
-    //signIn é async, no retorno tem que ser uma promise.
+    const[isLoadingUserStorageData, setIsLoadingUserStorage] = useState(true);
+    
     async function signIn(email:string, password:string){
 
         try {
@@ -34,20 +36,61 @@ export function AuthContextProvider({ children } : AuthContextProviderProps) {
            if(data.user){
             setUser(data.user);
             storageUserSave(data.user);
-            storageUserGet();
            }
 
        } catch(error) {
 
-       throw error;
+           throw error;
+
+       } finally {
+        setIsLoadingUserStorage(false);
+       }
+}
+
+    async function signOut() {
+         try{
+
+            setIsLoadingUserStorage(true); //ativando o loading
+            setUser({} as UserDTO); //não tem usuário
+            storageUserRemove; //importei a função que criei AuthContext e trouxe o contexto de remove dela para cá
+            
+        }catch(error) {
+
+            throw error;
+        }finally {
+            setIsLoadingUserStorage(false)
+        } 
     }
-    }
-    //podemos deixar a logica que vai atualizar(useState) nosso contexto aqui no AuthContext
 
 
-    //Ao invés de compartilharmos o user e setUser, passamos o signIn porque criamos uma função somente para passar esses dados.
+    async function loadUserData() {
+
+        const userLogged = await storageUserGet();
+
+        try {
+
+            if(userLogged){
+
+                setUser(userLogged);
+                setIsLoadingUserStorage(false);
+            }
+        } catch(error) {
+
+            throw error;
+        }
+    }
+ 
+    useEffect(() => { //useeffect é executado após a primeira renderização e após cada atualização.
+        loadUserData();
+    }, [])
+
     return (
-        <AuthContext.Provider value={{ user, signIn }}>
+        <AuthContext.Provider value={{ 
+                user, 
+                signIn,
+                signOut,
+                isLoadingUserStorageData,
+            }}>
         { children }
         </AuthContext.Provider>
     )

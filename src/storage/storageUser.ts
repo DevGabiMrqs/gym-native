@@ -10,5 +10,10 @@ export async function storageUserSave(user: UserDTO){
 //método que busca a informação armazenada
 export async function storageUserGet(){
    const storage =  await AsyncStorage.getItem(USER_STORAGE)
-   const user:UserDTO = storage ? JSON.parse(storage) : {};
+   const user : UserDTO = storage ? JSON.parse(storage) : {};
+   return user;
+}
+
+export async function storageUserRemove() {
+    const storage = await AsyncStorage.removeItem(USER_STORAGE)
 }
