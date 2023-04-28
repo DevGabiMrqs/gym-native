@@ -4,7 +4,9 @@ import { ReactNode, createContext } from "react";
 import { UserDTO } from "@dtos/UserDTO";
 import { api } from "@services/api";
 import { storageUserSave, storageUserGet, storageUserRemove } from "@storage/storageUser";
+import { storageAuthTokenSave } from '@storage/storageAuthToken'
 import axios from "axios";
+import { AUTH_TOKEN_STORAGE } from "@storage/storageConfig";
 
 export type AuthContextDataProps = {
     user: UserDTO;
@@ -22,10 +24,28 @@ export const AuthContext = createContext<AuthContextDataProps>({} as AuthContext
 //vamos criar um estado para guardar as informações do usuário, o estado muda todos os lugares que estiverem usando ele,
 //mesmo quando for um objeto vazio, ainda assim existe um padrão. Então devemos tipar, aqui foi passado o DTO.
 
-
 export function AuthContextProvider({ children } : AuthContextProviderProps) {
     const[user, setUser] = useState<UserDTO>({} as UserDTO);
     const[isLoadingUserStorageData, setIsLoadingUserStorage] = useState(true);
+
+    async function storageUserandToken(userData: UserDTO, token: string) {
+       
+        try{
+            setIsLoadingUserStorage(true)
+
+            api.defaults.headers.common['Authorization'] = `Bearer ${token}`
+
+            await storageUserSave(userData);
+            await storageAuthTokenSave(token);
+            setUser(userData);
+
+        }catch(error) {
+            throw error;
+
+        }finally {
+            setIsLoadingUserStorage(false)
+        }
+    }
     
     async function signIn(email:string, password:string){
 
@@ -33,9 +53,9 @@ export function AuthContextProvider({ children } : AuthContextProviderProps) {
 
            const { data } = await api.post('./sessions', {email, password}); //quero passar pro Back email e senha, e recuperar a response da back end, posso desetruturar os dados que o back vai retornar.
 
-           if(data.user){
+           if(data.user && data.token){
             setUser(data.user);
-            storageUserSave(data.user);
+            storageUserandToken(data.user, data.token);
            }
 
        } catch(error) {
