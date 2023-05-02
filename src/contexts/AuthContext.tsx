@@ -4,7 +4,7 @@ import { ReactNode, createContext } from "react";
 import { UserDTO } from "@dtos/UserDTO";
 import { api } from "@services/api";
 import { storageUserSave, storageUserGet, storageUserRemove } from "@storage/storageUser";
-import { storageAuthTokenSave } from '@storage/storageAuthToken'
+import { storageAuthTokenSave, storageAuthTokenGet, storageAuthTokenRemove } from '@storage/storageAuthToken'
 import axios from "axios";
 import { AUTH_TOKEN_STORAGE } from "@storage/storageConfig";
 
@@ -28,54 +28,56 @@ export function AuthContextProvider({ children } : AuthContextProviderProps) {
     const[user, setUser] = useState<UserDTO>({} as UserDTO);
     const[isLoadingUserStorageData, setIsLoadingUserStorage] = useState(true);
 
-    async function storageUserandToken(userData: UserDTO, token: string) {
-       
-        try{
-            setIsLoadingUserStorage(true)
 
+
+    async function userAndTokenUpdate(userData: UserDTO, token: string) {
+       
             api.defaults.headers.common['Authorization'] = `Bearer ${token}`
+            setUser(userData);
+
+    }
+    
+    async function storageUserAndTokenSave(userData: UserDTO, token: string) {
+        try{
+            setIsLoadingUserStorage(true);
 
             await storageUserSave(userData);
             await storageAuthTokenSave(token);
-            setUser(userData);
 
-        }catch(error) {
+        } catch(error) {
             throw error;
-
-        }finally {
+        } finally {
             setIsLoadingUserStorage(false)
         }
     }
-    
-    async function signIn(email:string, password:string){
 
+
+    async function signIn(email:string, password:string){ //quando o usuário faz autentication no signIn...
         try {
 
            const { data } = await api.post('./sessions', {email, password}); //quero passar pro Back email e senha, e recuperar a response da back end, posso desetruturar os dados que o back vai retornar.
 
            if(data.user && data.token){
-            setUser(data.user);
-            storageUserandToken(data.user, data.token);
+            await storageUserAndTokenSave(data.user, data.token); //...nós armazenamos o dado do usuário no dispositivo.
+            userAndTokenUpdate(data.user, data.token);
            }
-
        } catch(error) {
-
            throw error;
-
        } finally {
         setIsLoadingUserStorage(false);
        }
 }
 
-    async function signOut() {
+    async function signOut() {//no signOut removemos o usuário e o token
          try{
 
-            setIsLoadingUserStorage(true); //ativando o loading
-            setUser({} as UserDTO); //não tem usuário
-            storageUserRemove; //importei a função que criei AuthContext e trouxe o contexto de remove dela para cá
-            
-        }catch(error) {
+            setIsLoadingUserStorage(true); 
 
+            setUser({} as UserDTO); //não tem usuário
+            await storageUserRemove(); //importei a função que criei AuthContext e trouxe o contexto de remove dela para cá
+            await storageAuthTokenRemove();
+
+        }catch(error) {
             throw error;
         }finally {
             setIsLoadingUserStorage(false)
@@ -85,22 +87,23 @@ export function AuthContextProvider({ children } : AuthContextProviderProps) {
 
     async function loadUserData() {
 
-        const userLogged = await storageUserGet();
-
         try {
+        setIsLoadingUserStorage(true);
 
-            if(userLogged){
+        const userLogged = await storageUserGet();
+        const token = await storageAuthTokenGet();
 
-                setUser(userLogged);
-                setIsLoadingUserStorage(false);
+            if(token && userLogged){
+                userAndTokenUpdate(userLogged, token);
             }
         } catch(error) {
-
             throw error;
+        } finally {
+            setIsLoadingUserStorage(false);
         }
     }
  
-    useEffect(() => { //useeffect é executado após a primeira renderização e após cada atualização.
+    useEffect(() => { //useeffect é executado após a primeira renderização e depois a cada atualização.
         loadUserData();
     }, [])
 
