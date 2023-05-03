@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
-import { VStack, FlatList, HStack, Heading, Text } from 'native-base'
-import { useNavigation } from '@react-navigation/native'
+import React, { useState, useEffect, useCallback } from 'react'
+import { VStack, FlatList, HStack, Heading, Text, useToast } from 'native-base'
+import { useNavigation, useFocusEffect } from '@react-navigation/native'
 
 import { AppNavigatorRoutesProp } from '@routes/app.routes'
 
@@ -8,19 +8,87 @@ import { HomeHeader } from '@components/HomeHeader'
 import { Group } from '@components/Group'
 import { ExerciseCard } from '@components/ExerciseCard'
 
-export function Home() {
-  const [groups, setGroups] = useState(['Costas', 'Bíceps', 'Tríceps', 'Ombro', 'Peito'])
-  const [exercises, setExercises] = useState(['Puxada Frontal', 'Remada curvada', 'Remada unilateral', 'Levantamento terra'])
-  const [groupSelected, setGroupSelected] = useState('Costas')
+import { api } from '@services/api'
+import { AppError } from '@utils/AppError'
 
+import { ExerciseDTO } from '@dtos/Exercise.DTO'
+
+
+export function Home() {
+  const [groups, setGroups] = useState<string[]>([]);
+  const [exercises, setExercises] = useState([]);
+  const [groupSelected, setGroupSelected] = useState('Costas');
+
+  const toast = useToast(); 
   const navigation = useNavigation<AppNavigatorRoutesProp>()
 
   function handleOpenExerciseDetails(){
     navigation.navigate('exercise')
   }
 
+  async function fecthGroups() {
+    try {
+
+      const response = await api.get('/groups');
+      setGroups(response.data);
+
+    } catch (error) {
+      const isAppError = error instanceof AppError;
+      const title = isAppError ? error.message : "Não foi possível carregar os grupos musculares.";
+
+      toast.show({
+        title,
+        placement: 'top',
+        bgColor: 'red.500',
+      })
+    }
+  }
+
+
+  useEffect(() => {
+    fecthGroups();
+  }, [])
+
+
+  async function fecthExerciseByGroup() {
+    try {
+      
+      const response = await api.get(`exercises/bygroup/${groupSelected}`);//entre literal `` pq será acessado o id dentro de exercise. 
+      setExercises(response.data)
+
+    } catch (error) {
+      const isAppError = error instanceof AppError;
+      const title = isAppError ? error.message : "Não foi possível carregar os exercícios.";
+      
+      toast.show({
+        title,
+        placement: 'top',
+        bgColor: 'red.500',
+      })
+    }
+  }
+
+
+  useEffect(() => {
+    
+    fecthGroups();
+
+  },[])
+
+
+  useFocusEffect(useCallback(() => {
+
+    fecthExerciseByGroup();
+
+  }, [groupSelected]))
+//focusEffect é usado sempre q a tela home tiver o foco, para renderizar a função.
+//useCallBack anota a função para não repetir de forma desnecessária.
+//no array de dependências todas vezes que o groupSelect mudar ele vai disparar a busca pelo exercício.
+
+
   return (
     <VStack flex={1}>
+
       <HomeHeader />
 
       <FlatList
@@ -50,7 +118,6 @@ export function Home() {
           <Text color="gray.200" fontSize={"sm"}>
             {exercises.length}
           </Text>
-
         </HStack>
 
 
