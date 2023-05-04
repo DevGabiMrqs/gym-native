@@ -12,12 +12,14 @@ import { api } from '@services/api'
 import { AppError } from '@utils/AppError'
 
 import { ExerciseDTO } from '@dtos/Exercise.DTO'
+import { Loading } from '@components/Loading'
 
 
 export function Home() {
+  const [isLoading, setIsLoading] = useState(true);
   const [groups, setGroups] = useState<string[]>([]);
-  const [exercises, setExercises] = useState([]);
-  const [groupSelected, setGroupSelected] = useState('Costas');
+  const [exercises, setExercises] = useState<ExerciseDTO[]>([]);
+  const [groupSelected, setGroupSelected] = useState('costas');
 
   const toast = useToast(); 
   const navigation = useNavigation<AppNavigatorRoutesProp>()
@@ -41,7 +43,7 @@ export function Home() {
         placement: 'top',
         bgColor: 'red.500',
       })
-    }
+    } 
   }
 
 
@@ -53,7 +55,10 @@ export function Home() {
   async function fecthExerciseByGroup() {
     try {
       
+      setIsLoading(true)
+
       const response = await api.get(`exercises/bygroup/${groupSelected}`);//entre literal `` pq será acessado o id dentro de exercise. 
+      console.log(response.data)
       setExercises(response.data)
 
     } catch (error) {
@@ -65,6 +70,8 @@ export function Home() {
         placement: 'top',
         bgColor: 'red.500',
       })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -108,8 +115,12 @@ export function Home() {
         maxH={10}
         minH={10}
       />
+      
+        {
 
-      <VStack flex={1} px={8}>
+          isLoading
+          ? <Loading/> 
+          : <VStack flex={1} px={8}>
         <HStack justifyContent={'space-between'} mb={5}>
           <Heading color="gray.200" fontSize={"md"} fontFamily={"heading"}>
             Exercícios
@@ -123,17 +134,20 @@ export function Home() {
 
         <FlatList
           data={exercises}
-          keyExtractor={item => item}
+          keyExtractor={item => item.id}
           renderItem={({ item }) => (
             <ExerciseCard 
-              onPress={handleOpenExerciseDetails}
+            onPress={handleOpenExerciseDetails}
+            data={item}
             />
-          )}
-          showsVerticalScrollIndicator={false}
-          _contentContainerStyle={{ paddingBottom: 20}}
-        />
+            )}
+            showsVerticalScrollIndicator={false}
+            _contentContainerStyle={{ paddingBottom: 20}}
+            />
 
-      </VStack>
+            </VStack>
+
+        }   
 
     </VStack>
   )

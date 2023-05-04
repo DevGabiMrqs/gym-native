@@ -13,7 +13,7 @@ export function HistoryCard() {
           </Heading>
 
           <Text fontSize="lg" color="gray.100" mt={1} numberOfLines={1}>
-            Puxada frontal
+            
           </Text>
         </VStack>
 
