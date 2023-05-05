@@ -24,8 +24,8 @@ export function Home() {
   const toast = useToast(); 
   const navigation = useNavigation<AppNavigatorRoutesProp>()
 
-  function handleOpenExerciseDetails(){
-    navigation.navigate('exercise')
+  function handleOpenExerciseDetails(exerciseId: string){ //vou pegar o id do exercício para quando acessar ele aparecer completo e ser possível marcar como realizado
+    navigation.navigate('exercise', {exerciseId})
   }
 
   async function fecthGroups() {
@@ -58,7 +58,6 @@ export function Home() {
       setIsLoading(true)
 
       const response = await api.get(`exercises/bygroup/${groupSelected}`);//entre literal `` pq será acessado o id dentro de exercise. 
-      console.log(response.data)
       setExercises(response.data)
 
     } catch (error) {
@@ -137,7 +136,7 @@ export function Home() {
           keyExtractor={item => item.id}
           renderItem={({ item }) => (
             <ExerciseCard 
-            onPress={handleOpenExerciseDetails}
+            onPress={() => handleOpenExerciseDetails(item.id)}
             data={item}
             />
             )}
