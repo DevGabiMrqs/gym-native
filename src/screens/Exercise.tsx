@@ -16,6 +16,7 @@ import RepetitionsSvg from '@assets/repetitions.svg'
 import { Button } from '@components/Button'
 
 import { ExerciseDTO } from '@dtos/Exercise.DTO'
+import { Loading } from '@components/Loading'
 
 
 
@@ -26,13 +27,13 @@ type RoutesParamsProps = {
 
 
 export function Exercise() {
+  const [submittingRegister, setSubmittingRegister] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [exercise, setExerciseAt] = useState<ExerciseDTO>({} as ExerciseDTO);
   const navigation = useNavigation<AppNavigatorRoutesProp>()
   
   const route = useRoute();
   const toast = useToast();
-  const [isLoading, setIsLoading] = useState(true);
-
 
   const { exerciseId } = route.params as RoutesParamsProps;
 
@@ -42,9 +43,6 @@ export function Exercise() {
   function handleGoBack() {
     navigation.goBack()
   }
-
-
-
 
   async function fecthExerciseDetails() {
     try {
@@ -67,6 +65,38 @@ export function Exercise() {
       setIsLoading(false);
     }
   }
+
+  async function handleExerciseHistoryRegister(){
+    try {
+
+      setSubmittingRegister(true)
+      
+      await api.post("/history", {exercise_id: exerciseId }) //Quero mandar o id do exercício executado para a History. Para visualizarmos o envio do exercício no clique do botão abre-se o beekeeper(banco de dados); 
+
+      toast.show({
+        title: "Parabéns! Exercício registrado no seu histórico.",
+        placement: "top",
+        bgColor: "green.700",
+      });
+
+      navigation.navigate('history') //quando marco como realizado ele jogar para a screen do histórico.
+
+    } catch (error) {
+      const isAppError = error instanceof AppError;
+      const title = isAppError ? error.message : "Não foi possível marcar o exercício como realizado."
+
+
+      toast.show({
+        title,
+        placement: "top",
+        bgColor: "red.500",
+      })
+    } finally {
+      setSubmittingRegister(false);
+    }
+
+  }
+
 
   useEffect (() => {
     fecthExerciseDetails();
@@ -99,7 +129,7 @@ export function Exercise() {
         </HStack>
       </VStack>
 
-  
+        { isLoading ? <Loading/> :  
         <VStack p={8}>
           <Box rounded="lg" mb={3} overflow="hidden">
           <Image
@@ -127,9 +157,14 @@ export function Exercise() {
               </HStack>
             </HStack>
 
-            <Button title='Marcar como realizado' />
+            <Button 
+              title='Marcar como realizado'
+              isLoading={submittingRegister}
+              onPress={handleExerciseHistoryRegister}
+            />
           </Box>
         </VStack>
+        }
     </VStack >
 
   )

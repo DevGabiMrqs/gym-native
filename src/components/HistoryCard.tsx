@@ -12,8 +12,8 @@ export function HistoryCard() {
             Costas
           </Heading>
 
-          <Text fontSize="lg" color="gray.100" mt={1} numberOfLines={1}>
-            
+          <Text fontSize="md" color="gray.100" mt={1} numberOfLines={1}>
+            Puxada Frontal
           </Text>
         </VStack>
 
