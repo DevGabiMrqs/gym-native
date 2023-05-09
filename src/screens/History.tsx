@@ -1,20 +1,46 @@
-import React, { useState } from 'react'
-import { Heading, VStack, SectionList, Text } from 'native-base'
+import React, { useCallback, useState } from 'react'
+import { Heading, VStack, SectionList, Text, useToast } from 'native-base'
 
 import { ScreenHeader } from '@components/ScreenHeader'
 import { HistoryCard } from '@components/HistoryCard'
+import { AppError } from '@utils/AppError'
+import { api } from '@services/api'
+import { useFocusEffect } from '@react-navigation/native'
+import { HistoryDTO } from '@dtos/History.DTO'
+import { HistoryByDayDTO } from '@dtos/HistoryByDay'
+
 
 export function History() {
-  const [exercises, setExercises] = useState([
-    {
-      title: "16.03.23",
-      data: ["Puxada frontal", "Remada Unilateral"]
-    },
-    {
-      title: "17.03.23",
-      data: ["Puxada frontal"]
-    },
-  ])
+
+  const [isLoading, setIsLoading] = useState(true);
+  const toast = useToast();
+  const [exercises, setExercises] = useState<HistoryByDayDTO[]>([])
+
+  async function fecthHistory() {
+    try {
+      setIsLoading(true)
+
+      const response = await api.get('/history');
+      setExercises(response.data)
+
+      
+    } catch (error) {
+      const isAppError = error instanceof AppError;
+      const title =  isAppError ? error.message : "Não foi possível carregar o histórico de exercícios."
+
+      toast.show({
+        title,
+        placement: 'top',
+        bgColor: 'red.500',
+      })
+    } finally {
+      setIsLoading(false);
+    }    
+  }
+
+  useFocusEffect(useCallback(() => {
+    fecthHistory()
+  }, [])); 
 
   return (
     <VStack flex={1}>
@@ -22,9 +48,9 @@ export function History() {
 
       <SectionList
         sections={exercises}
-        keyExtractor={item => item}
+        keyExtractor={item => item.id}
         renderItem={({ item }) => (
-          <HistoryCard />
+          <HistoryCard data={item}/> //o componente history card está recebendo datas e pegando os itens.
         )}
         renderSectionHeader={({ section }) => (
           <Heading fontSize={"md"} color="gray.200" mt={10} mb={3} fontFamily={"heading"}>
