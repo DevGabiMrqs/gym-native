@@ -10,6 +10,7 @@ import { AUTH_TOKEN_STORAGE } from "@storage/storageConfig";
 
 export type AuthContextDataProps = {
     user: UserDTO;
+    updateUserProfile: (userUpdated: UserDTO) => Promise<void>;
     signIn: (email: string, password: string) => Promise<void>;
     isLoadingUserStorageData: boolean;
     signOut: () => Promise<void>;
@@ -84,6 +85,16 @@ export function AuthContextProvider({ children } : AuthContextProviderProps) {
         } 
     }
 
+    async function updateUserProfile(userUpdated: UserDTO) {
+        try {
+            setUser(userUpdated); //atualizamos o dado do usuário 
+            await storageUserSave(userUpdated);// e no async storage no dispositivo.
+
+        } catch (error) {
+            throw error;
+        }
+    }
+
 
     async function loadUserData() {
 
@@ -112,6 +123,7 @@ export function AuthContextProvider({ children } : AuthContextProviderProps) {
                 user, 
                 signIn,
                 signOut,
+                updateUserProfile,
                 isLoadingUserStorageData,
             }}>
         { children }

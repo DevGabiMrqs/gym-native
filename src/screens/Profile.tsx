@@ -13,6 +13,7 @@ import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { api } from '@services/api';
 import { AppError } from '@utils/AppError';
+import deafultUserPhotoImg from '@assets/userPhotoDefault.png'
 
 
 const PHOTO_SIZE = 33;
@@ -29,15 +30,14 @@ type FormDataProps = {
 const profileSchema = yup.object({
   name: yup.string().required("Informe o nome."),
   password: yup.string().min(6, "A senha deve ter pelo menos 6 caracteres.").nullable().transform((value) => !!value  ?value :null),
-  confirm_password: yup
-  .string()
+  confirm_password: yup.string()
   .nullable()
-  .transform((value) => !!value ?value :null)
+  .transform(value => value || null)
   .oneOf([yup.ref('password'), null], "A confirmação da senha não confere.")
-  // .when('password', {
-  //    is: (Field: any) => Field,
-  //    then: yup.string().nullable().required("Informe a confirmação da senha.").transform((value) => !!value ?value :null)
-  //  })
+  .when('password', {
+      is: (field: string) => field,
+      then: (schema) => schema.nullable().transform((value) => !!value ?value :null).required("Informe a confirmação da senha.")
+  })
 });
 
 export function Profile() {
@@ -47,7 +47,7 @@ export function Profile() {
   const [userPhoto, setUserPhoto] = useState('https://github.com/devgabimrqs.png');
 
   const toast = useToast();
-  const { user } = useAuth();
+  const { user, updateUserProfile } = useAuth();
   const { control, handleSubmit, formState: { errors } } = useForm<FormDataProps>({
     defaultValues: {
       name: user.name,
@@ -84,10 +84,38 @@ export function Profile() {
             bgColor: "red.500"
           })
         }
+        
+        // setUserPhoto(photoSelected.assets[0].uri)
 
-        setUserPhoto(photoSelected.assets[0].uri)
+        const fileExtension = photoSelected.assets[0].uri.split('.').pop();
+        console.log(fileExtension)
+
+        const photoFile = {
+          name: `${user.name}.${fileExtension}`.toLowerCase(),
+          uri: photoSelected.assets[0].uri,
+          type: "image"
+        } as any;
+
+        const userPhotoUploadForm = new FormData();
+        userPhotoUploadForm.append('avatar', photoFile)
+
+        const avatarUpdatedResponse = await api.patch('/users/avatar', userPhotoUploadForm, {
+          headers: {
+              'Content-Type': 'multipart/form-data'
+          }
+        });
+
+        const userUpdated = user;
+        userUpdated.avatar = avatarUpdatedResponse.data.avatar;
+        updateUserProfile(userUpdated);
+        
+        toast.show({
+          title: "Foto atualizada!",
+          placement: "top",
+          bgColor: "green.500",
+        });
+
       }
-
     } catch (error) {
       console.log(error);
     } finally {
@@ -100,7 +128,13 @@ export function Profile() {
     try {
 
       setUpdating(true);
+
+      const userUpdated = user;
+      userUpdated.name = data.name;
+
       await api.put('/users', data);
+
+      await updateUserProfile(userUpdated);
 
       toast.show({
         title:"Perfil atualizado com sucesso.",
@@ -131,7 +165,8 @@ export function Profile() {
       <ScrollView>
         <Center mt={6} px={10}>
           {
-            photoIsLoading ?
+            photoIsLoading 
+            ?
               <Skeleton
                 w={PHOTO_SIZE}
                 h={PHOTO_SIZE}
@@ -139,9 +174,13 @@ export function Profile() {
                 startColor={"gray.500"}
                 endColor={"gray.400"}
               />
-              :
+            :
               <UserPhoto
-                source={{ uri: userPhoto }}
+                source={ 
+                  user.avatar 
+                  ? { uri: `${api.defaults.baseURL}/avatar/${user.avatar}` } 
+                  : deafultUserPhotoImg 
+                }
                 alt="Imagem do usuário"
                 size={PHOTO_SIZE}
               />
