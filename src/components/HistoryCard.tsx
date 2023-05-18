@@ -1,7 +1,7 @@
 import React from "react";
 import { Heading, HStack, Text, VStack } from "native-base";
 import { TouchableOpacity } from "react-native";
-import { HistoryDTO } from "@dtos/History.DTO";
+import { HistoryDTO } from "@components/History.DTO";
 
 type Props = {
   data: HistoryDTO;

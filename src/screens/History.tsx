@@ -6,7 +6,7 @@ import { HistoryCard } from '@components/HistoryCard'
 import { AppError } from '@utils/AppError'
 import { api } from '@services/api'
 import { useFocusEffect } from '@react-navigation/native'
-import { HistoryDTO } from '@dtos/History.DTO'
+import { HistoryDTO } from '@components/History.DTO'
 import { HistoryByDayDTO } from '@dtos/HistoryByDay'
 
 

@@ -8,23 +8,30 @@ type APIInstanceProps = AxiosInstance & {
 }
 
  const api = axios.create({
-    baseURL: "http://179.97.102.202:3333"
-});
+    baseURL: "http://179.97.102.202:3333",
+}) as APIInstanceProps;
 
-// api.registerInterceptTokenManager = signOut => {
+api.registerInterceptTokenManager = signOut => {
+    const interceptTokenManager = api.interceptors.response.use(response => response, requestError => {
+        if(requestError?.response.status === 401) {
+            if(requestError.response.data.message === "token.expired" || requestError.response.data?.message === "token.invalid") {
+                
+            }
+            signOut(); //se o problema não está direcionado com o token o usuário é deslogado.Para começar a autenticação novamente.Com token atualizado.
+            // mas se é um erro ao token inválido então buscaremos um token novo pro usuário.
+        };
 
-// }
+        
+        if(requestError.response && requestError.response.data) {
+            return Promise.reject(new AppError(requestError.response.data.message));
+        } else {
+            return Promise.reject(requestError);
+        }
+    });
 
-api.interceptors.response.use(response => response, error => {
-    if(error.response && error.response.data) {
-        return Promise.reject(new AppError(error.response.data.message));
-    } else {
-        return Promise.reject(new AppError("Erro no servidor. Tente novamente mais tarde."));
-    }
-}); 
-//se dentro do erro tem uma resposta, e se tem erro no data
-//dou return rejeitando a promise, passando um nivi oadrão de mensagem de erro.
-
-
+        return () => {
+        api.interceptors.response.eject(interceptTokenManager)
+    };
+};
 
 export { api };                                                                 

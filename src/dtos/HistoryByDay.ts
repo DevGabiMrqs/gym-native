@@ -1,5 +1,5 @@
 //tipagem para sectionlist agrupada
-import { HistoryDTO } from "./History.DTO";
+import { HistoryDTO } from "../components/History.DTO";
 
 export type HistoryByDayDTO = {
     title: string;
