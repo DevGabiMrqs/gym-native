@@ -38,12 +38,12 @@ export function AuthContextProvider({ children } : AuthContextProviderProps) {
 
     }
     
-    async function storageUserAndTokenSave(userData: UserDTO, token: string) {
+    async function storageUserAndTokenSave(userData: UserDTO, token: string, refresh_token: string) {
         try{
             setIsLoadingUserStorage(true);
 
             await storageUserSave(userData);
-            await storageAuthTokenSave(token);
+            await storageAuthTokenSave({token, refresh_token});
 
         } catch(error) {
             throw error;
@@ -58,12 +58,12 @@ export function AuthContextProvider({ children } : AuthContextProviderProps) {
 
            const { data } = await api.post('./sessions', {email, password}); //quero passar pro Back email e senha, e recuperar a response da back end, posso desetruturar os dados que o back vai retornar.
 
-           if(data.user && data.token){
-            await storageUserAndTokenSave(data.user, data.token); //...nós armazenamos o dado do usuário no dispositivo.
+           if(data.user && data.token && data.refresh_token){
+            await storageUserAndTokenSave(data.user, data.token, data.refresh_token); //...nós armazenamos o dado do usuário no dispositivo.
             userAndTokenUpdate(data.user, data.token);
            }
        } catch(error) {
-           throw error;
+         throw error;
        } finally {
         setIsLoadingUserStorage(false);
        }
@@ -102,7 +102,7 @@ export function AuthContextProvider({ children } : AuthContextProviderProps) {
         setIsLoadingUserStorage(true);
 
         const userLogged = await storageUserGet();
-        const token = await storageAuthTokenGet();
+        const { token } = await storageAuthTokenGet();
 
             if(token && userLogged){
                 userAndTokenUpdate(userLogged, token);
